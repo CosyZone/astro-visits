@@ -39,29 +39,6 @@ export default function astroVisitsIntegration(options: AstroVisitsOptions = {})
           entrypoint: join(__dirname, '..', 'src', 'pages', 'api', 'visit.ts')
         });
       },
-
-      'astro:server:setup': ({ server }) => {
-        // 在开发服务器中添加中间件来模拟D1数据库
-        server.middlewares.use((req, _res, next) => {
-          // 为开发环境提供模拟的D1数据库对象
-          (req as any).locals = (req as any).locals || {};
-          (req as any).locals.runtime = {
-            env: {
-              [binding]: {
-                prepare: () => ({
-                  bind: (...args: any[]) => ({
-                    run: async () => {
-                      console.log('[astro-visits] Mock D1 database insert:', args);
-                      return { success: true };
-                    }
-                  })
-                })
-              }
-            }
-          };
-          next();
-        });
-      }
     },
   };
 }

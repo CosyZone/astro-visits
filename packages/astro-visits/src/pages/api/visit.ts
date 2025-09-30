@@ -31,26 +31,20 @@ export const POST: APIRoute = async ({ request, locals }) => {
             ip: clientIP,
         };
 
-        // 获取D1数据库绑定
-        // 注意：在开发环境中，我们需要模拟数据库
+        // 获取D1数据库绑定（开发环境由中间件模拟，生产环境为真实绑定）
         const db = (locals as any).runtime?.env?.VISITS_DB;
 
         if (!db) {
-            // 开发环境模拟
-            console.log('Visit recorded (dev mode):', {
-                url: visitData.url,
-                ip: visitData.ip,
-                timestamp: visitData.timestamp
-            });
-            return new Response(JSON.stringify({ success: true, message: 'Visit recorded (dev mode)' }), {
-                status: 200,
+            console.error('Database binding \'VISITS_DB\' not available');
+            return new Response(JSON.stringify({ success: false, error: 'Database not available' }), {
+                status: 500,
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
         }
 
-        // 在生产环境中，将数据插入D1数据库
+        // 将数据插入D1数据库
         try {
             await db.prepare(`
         INSERT INTO visits (
