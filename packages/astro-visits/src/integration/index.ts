@@ -36,7 +36,7 @@ export default function astroVisitsIntegration(options: AstroVisitsOptions = {})
         // 注入API路由
         injectRoute({
           pattern: '/api/visit',
-          entrypoint: join(__dirname, '..', 'src', 'pages', 'api', 'visit.ts')
+          entrypoint: join(__dirname, '..', 'pages', 'api', 'visit.ts')
         });
 
         logger.info('✅ Integration setup complete');

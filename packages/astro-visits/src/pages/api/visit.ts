@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import schemaSql from '../../../integration/schema.sql?raw';
+import schemaSql from '../../integration/schema.sql?raw';
 
 export interface VisitData {
     timestamp: string;
