@@ -18,6 +18,10 @@
             "WebWorker"
         ],
         "baseUrl": ".",
+        "typeRoots": [
+            "./types",
+            "./node_modules/@types"
+        ],
         "paths": {
             "@lib/*": [
                 "src/lib/*"
@@ -28,7 +32,8 @@
         "index.ts",
         "src/**/*.ts",
         "src/**/*.tsx",
-        "src/**/*.astro"
+        "src/**/*.astro",
+        "packages/**/*.d.ts"
     ],
     "exclude": [
         "node_modules"
