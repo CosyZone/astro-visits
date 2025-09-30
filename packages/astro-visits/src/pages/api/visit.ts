@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import schemaSql from '../../../integration/schema.sql?raw';
 
 export interface VisitData {
     timestamp: string;
@@ -37,6 +38,31 @@ export const POST: APIRoute = async ({ request, locals }) => {
         if (!db) {
             console.error('Database binding \'VISITS_DB\' not available');
             return new Response(JSON.stringify({ success: false, error: 'Database not available' }), {
+                status: 500,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        }
+
+        // 在插入前确保数据库已迁移（幂等：IF NOT EXISTS）
+        try {
+            // 去除注释与空行，按分号切分后逐条执行，规避首行注释导致的 D1_EXEC_ERROR
+            const sanitized = schemaSql
+                .split('\n')
+                .map((line) => line.trim())
+                .filter((line) => line.length > 0 && !line.startsWith('--'))
+                .join('\n');
+            const statements = sanitized
+                .split(';')
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0);
+            for (const stmt of statements) {
+                await db.prepare(stmt).run();
+            }
+        } catch (migrateError) {
+            console.error('Schema migration error:', migrateError);
+            return new Response(JSON.stringify({ success: false, error: 'Schema migration failed' }), {
                 status: 500,
                 headers: {
                     'Content-Type': 'application/json'

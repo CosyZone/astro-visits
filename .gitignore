@@ -115,3 +115,6 @@ dist
 # Astro
 .astro/
 dist/
+
+# Cloudflare
+.wrangler/
