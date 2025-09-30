@@ -26,7 +26,7 @@ export default function astroVisitsIntegration(options: AstroVisitsOptions = {})
   return {
     name: 'astro-visits',
     hooks: {
-      'astro:config:setup': ({ injectScript, injectRoute }) => {
+      'astro:config:setup': ({ injectScript, injectRoute, logger }) => {
         // 注入客户端脚本以收集访问者信息（从独立文件读取并替换占位符）
         const clientScriptPath = join(__dirname, 'client.js');
         const clientScriptRaw = readFileSync(clientScriptPath, 'utf-8');
@@ -38,6 +38,8 @@ export default function astroVisitsIntegration(options: AstroVisitsOptions = {})
           pattern: '/api/visit',
           entrypoint: join(__dirname, '..', 'src', 'pages', 'api', 'visit.ts')
         });
+
+        logger.info('✅ Integration setup complete');
       },
     },
   };
