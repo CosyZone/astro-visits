@@ -1,0 +1,25 @@
+{
+    "name": "example",
+    "version": "1.0.0",
+    "description": "Example project for astro-visits integration",
+    "type": "module",
+    "scripts": {
+        "dev": "astro dev",
+        "start": "astro dev",
+        "build": "astro build",
+        "preview": "astro preview",
+        "astro": "astro"
+    },
+    "keywords": [
+        "astro",
+        "example",
+        "tracking"
+    ],
+    "author": "Your Name",
+    "license": "MIT",
+    "dependencies": {
+        "@astrojs/cloudflare": "^12.6.9",
+        "astro": "^5.14.1",
+        "astro-visits": "workspace:*"
+    }
+}

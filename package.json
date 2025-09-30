@@ -1,0 +1,23 @@
+{
+  "workspaces": [
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm --filter example dev",
+    "test": "pnpm -r test"
+  },
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
+  },
+  "files": [
+    "README.md",
+    "README_CN.md"
+  ]
+}

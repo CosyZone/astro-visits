@@ -1,0 +1,12 @@
+name = "astro-visits"
+main = ".astro/worker.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[site]
+bucket = ".astro"
+
+[[d1_databases]]
+binding = "VISITS_DB"
+database_name = "visits-db"
+database_id = "your-database-id-here"
