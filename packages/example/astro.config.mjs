@@ -5,7 +5,6 @@ import cloudflare from '@astrojs/cloudflare';
 export default defineConfig({
   integrations: [
     astroVisits({
-      binding: 'DB',
       trackDev: true,
     }),
   ],

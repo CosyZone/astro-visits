@@ -32,8 +32,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
             ip: clientIP,
         };
 
-        // 获取D1数据库绑定名称（从环境变量或默认值）
-        const bindingName = process.env.ASTRO_VISITS_BINDING || 'VISITS_DB';
+        // 使用固定的数据库绑定名称
+        const bindingName = 'VISITS_DB';
         const db = (locals as any).runtime?.env?.[bindingName];
 
         if (!db) {

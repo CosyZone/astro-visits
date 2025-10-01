@@ -9,5 +9,10 @@ binding = "ASSETS"
 
 [[d1_databases]]
 binding = "DB"
+database_name = "wilddb"
+database_id = "55d3f8f9-29f4-4516-8752-b8000e481a33"
+
+[[d1_databases]]
+binding = "VISITS_DB"
 database_name = "visits-db"
 database_id = "your-database-id-here"
