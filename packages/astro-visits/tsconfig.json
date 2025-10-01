@@ -1,0 +1,40 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "ESNext",
+        "moduleResolution": "node",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        "isolatedModules": true,
+        "verbatimModuleSyntax": true,
+        "jsx": "preserve",
+        "lib": [
+            "ES2020",
+            "DOM",
+            "WebWorker"
+        ],
+        "baseUrl": ".",
+        "typeRoots": [
+            "./src/types",
+            "./node_modules/@types"
+        ],
+        "paths": {
+            "@lib/*": [
+                "src/lib/*"
+            ]
+        }
+    },
+    "include": [
+        "index.ts",
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "src/**/*.astro"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

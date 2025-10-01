@@ -19,7 +19,7 @@ export default function astroVisitsIntegration(options: AstroVisitsOptions = {})
   const { binding = 'VISITS_DB', trackDev = false } = options;
 
   return {
-    name: 'astro-visits',
+    name: '@coffic/astro-visits',
     hooks: {
       'astro:config:setup': ({ injectScript, injectRoute, logger }) => {
         // 设置环境变量，让 API 路由知道使用哪个绑定名称
@@ -32,9 +32,11 @@ export default function astroVisitsIntegration(options: AstroVisitsOptions = {})
         injectScript('page', clientScript);
 
         // 注入API路由 - 使用相对于example项目node_modules的路径
+        // 设置 prerender: false 因为这是一个 API 路由，需要在服务器端动态处理
         injectRoute({
           pattern: '/api/visit',
-          entrypoint: './node_modules/@coffic/astro-visits/src/pages/api/visit.ts'
+          entrypoint: './node_modules/@coffic/astro-visits/src/pages/api/visit.ts',
+          prerender: false
         });
 
         logger.info(`✅ Integration setup complete with binding: ${binding}`);

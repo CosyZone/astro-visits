@@ -7,7 +7,7 @@
         "dev": "astro dev",
         "start": "astro dev",
         "build": "astro build",
-        "preview": "wrangler dev ./dist/_worker.js/index.js",
+        "preview": "astro build && wrangler dev ./dist/_worker.js/index.js",
         "astro": "astro"
     },
     "keywords": [
