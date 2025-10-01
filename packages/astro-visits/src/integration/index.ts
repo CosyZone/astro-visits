@@ -20,13 +20,13 @@ export default function astroVisitsIntegration(options: AstroVisitsOptions = {})
         const disableInDev = !trackDev;
         const clientScript = CLIENT_SCRIPT_TEMPLATE.replace('%%DISABLE_IN_DEV%%', JSON.stringify(disableInDev));
 
-        injectScript('page', clientScript);
+        injectScript('page', `import "@coffic/astro-visits/client.js";`);
 
         // 注入API路由 - 使用相对于example项目node_modules的路径
         // 设置 prerender: false 因为这是一个 API 路由，需要在服务器端动态处理
         injectRoute({
           pattern: '/api/visit',
-          entrypoint: './node_modules/@coffic/astro-visits/src/pages/api/visit.ts',
+          entrypoint: '@coffic/astro-visits/visit.ts',
           prerender: false
         });
 

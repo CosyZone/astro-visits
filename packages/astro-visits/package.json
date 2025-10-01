@@ -6,7 +6,8 @@
   "main": "index.ts",
   "exports": {
     ".": "./index.ts",
-    "./visits.ts": "./api/visits.ts"
+    "./visit.ts": "./src/pages/api/visit.ts",
+    "./client.js": "./src/integration/client.js"
   },
   "types": "index.ts",
   "scripts": {
