@@ -1,15 +1,8 @@
 ---
 import { VisitsQuery } from 'astro-visits';
 
-// 获取数据库实例
-const db = Astro.locals.runtime?.env?.VISITS_DB;
-
-if (!db) {
-  throw new Error('Database not available');
-}
-
-// 创建查询实例
-const visitsQuery = new VisitsQuery(db);
+// 创建查询实例（直接传递 Astro.locals）
+const visitsQuery = new VisitsQuery(Astro.locals);
 
 // 获取查询参数
 const url = new URL(Astro.request.url);

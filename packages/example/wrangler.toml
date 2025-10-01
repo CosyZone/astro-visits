@@ -7,6 +7,6 @@ compatibility_flags = ["nodejs_compat"]
 bucket = ".astro"
 
 [[d1_databases]]
-binding = "VISITS_DB"
+binding = "DB"
 database_name = "visits-db"
 database_id = "your-database-id-here"

@@ -2,12 +2,18 @@ import type { VisitQueryOptions, VisitQueryResult, VisitRecord, VisitStats } fro
 
 /**
  * 访问数据查询工具类
- * 用户需要提供 D1 数据库实例，然后可以使用此工具类进行查询
+ * 接收 Astro.locals，内部自动获取正确的数据库绑定
  */
 export class VisitsQuery {
-    constructor(private db: any) {
-        if (!db) {
-            throw new Error('Database instance is required');
+    private db: any;
+
+    constructor(locals: any) {
+        // 从环境变量获取绑定名称（由集成设置）
+        const bindingName = process.env.ASTRO_VISITS_BINDING || 'VISITS_DB';
+        this.db = locals?.runtime?.env?.[bindingName];
+
+        if (!this.db) {
+            throw new Error(`Database binding '${bindingName}' not available. Make sure you have configured the astro-visits integration with the correct binding name.`);
         }
     }
 

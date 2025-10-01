@@ -9,9 +9,8 @@
 ---
 import { VisitsQuery } from 'astro-visits';
 
-// 获取数据库实例（这里假设你已经配置了 D1 绑定）
-const db = Astro.locals.runtime?.env?.VISITS_DB;
-const visitsQuery = new VisitsQuery(db);
+// 创建查询实例（直接传递 Astro.locals）
+const visitsQuery = new VisitsQuery(Astro.locals);
 
 // 获取访问记录（分页）
 const visits = await visitsQuery.getVisits({

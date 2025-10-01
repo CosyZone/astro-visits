@@ -32,11 +32,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
             ip: clientIP,
         };
 
-        // 获取D1数据库绑定（开发环境由中间件模拟，生产环境为真实绑定）
-        const db = (locals as any).runtime?.env?.VISITS_DB;
+        // 获取D1数据库绑定名称（从环境变量或默认值）
+        const bindingName = process.env.ASTRO_VISITS_BINDING || 'VISITS_DB';
+        const db = (locals as any).runtime?.env?.[bindingName];
 
         if (!db) {
-            console.error('Database binding \'VISITS_DB\' not available');
+            console.error(`Database binding '${bindingName}' not available`);
             return new Response(JSON.stringify({ success: false, error: 'Database not available' }), {
                 status: 500,
                 headers: {

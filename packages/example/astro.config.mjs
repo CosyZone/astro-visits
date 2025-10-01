@@ -4,13 +4,14 @@ import astroVisits from 'astro-visits';
 import cloudflare from '@astrojs/cloudflare';
 
 export default defineConfig({
-    integrations: [astroVisits({
-        binding: 'VISITS_DB',
-        trackDev: true
-    })],
+  integrations: [
+    astroVisits({
+      binding: 'DB',
+      trackDev: true,
+    }),
+  ],
 
-    adapter: cloudflare({
-        platformProxy: true
-    }
-    ),
+  adapter: cloudflare({
+    platformProxy: true,
+  }),
 });
