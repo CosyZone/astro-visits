@@ -1,0 +1,99 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/publish.yaml'
+      - 'packages/astro-visits/**'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: |
+          pnpm install
+          cd packages/astro-visits && pnpm install
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Build
+        run: |
+          cd packages/astro-visits
+          # 集成包不需要 astro build，只需要 TypeScript 编译检查
+          pnpm exec tsc --noEmit
+
+      - name: Bump version
+        id: version
+        run: |
+          cd packages/astro-visits
+          # 获取当前版本号
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          # 直接用Node.js脚本修改版本号
+          NEW_VERSION=$(node -e "
+            const fs = require('fs');
+            const pkg = require('./package.json');
+            const [major, minor, patch] = pkg.version.split('.').map(Number);
+            pkg.version = \`\${major}.\${minor}.\${patch + 1}\`;
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\\n');
+            console.log(pkg.version);
+          ")
+          # 设置输出变量
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "current_version=${CURRENT_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Commit changes
+        run: |
+          cd packages/astro-visits
+          git pull
+          git add package.json
+          git commit -m "🎨 Chore: bump version to ${{ steps.version.outputs.new_version }}"
+          git tag "v${{ steps.version.outputs.new_version }}"
+          git push
+          git push --tags
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: 'v${{ steps.version.outputs.new_version }}'
+          name: 'astro-visits v${{ steps.version.outputs.new_version }}'
+          body: |
+            ## astro-visits v${{ steps.version.outputs.new_version }}
+
+            从 v${{ steps.version.outputs.current_version }} 升级到 v${{ steps.version.outputs.new_version }}
+
+            ### 变更内容
+            - 自动发布新版本
+            - 包含最新的代码变更
+            - 访问数据追踪和查询工具
+          draft: false
+          prerelease: false
+
+      - name: Publish to npm
+        run: |
+          cd packages/astro-visits
+          pnpm publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

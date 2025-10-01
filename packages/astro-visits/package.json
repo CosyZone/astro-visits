@@ -15,16 +15,8 @@
     "preview": "astro preview",
     "astro": "astro"
   },
-  "keywords": [
-    "astro",
-    "integration",
-    "tracking",
-    "analytics",
-    "cloudflare",
-    "d1",
-    "visits"
-  ],
-  "author": "Your Name",
+  "keywords": [],
+  "author": "Coffic",
   "license": "MIT",
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
@@ -38,7 +30,14 @@
     "README.md",
     "README_CN.md",
     "index.ts",
-    "integration/**/*",
     "src/**/*"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CosyZone/astro-visits.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CosyZone/astro-visits/issues"
+  },
+  "homepage": "https://github.com/CosyZone/astro-visits#readme"
 }
