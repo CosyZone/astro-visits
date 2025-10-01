@@ -1,0 +1,380 @@
+---
+import { VisitsQuery } from 'astro-visits';
+
+// 获取数据库实例
+const db = Astro.locals.runtime?.env?.VISITS_DB;
+
+if (!db) {
+  throw new Error('Database not available');
+}
+
+// 创建查询实例
+const visitsQuery = new VisitsQuery(db);
+
+// 获取查询参数
+const url = new URL(Astro.request.url);
+const page = parseInt(url.searchParams.get('page') || '1');
+const limit = parseInt(url.searchParams.get('limit') || '10');
+const urlFilter = url.searchParams.get('url') || undefined;
+
+// 查询数据
+const visits = await visitsQuery.getVisits({
+  page,
+  limit,
+  sortBy: 'timestamp',
+  sortOrder: 'desc',
+  filters: {
+    url: urlFilter,
+  },
+});
+
+// 获取统计数据
+const stats = await visitsQuery.getStats();
+
+// 获取热门页面
+const topPages = await visitsQuery.getTopPages(5);
+
+// 获取最近7天统计
+const recentStats = await visitsQuery.getRecentStats(7);
+---
+
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>访问数据管理 - Astro Visits Example</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+
+      .header {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 2em;
+        font-weight: bold;
+        color: #2563eb;
+        margin-bottom: 5px;
+      }
+
+      .stat-label {
+        color: #6b7280;
+        font-size: 0.9em;
+      }
+
+      .section {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+
+      .visits-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+
+      .visits-table th,
+      .visits-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .visits-table th {
+        background-color: #f9fafb;
+        font-weight: 600;
+        color: #374151;
+      }
+
+      .visits-table tr:hover {
+        background-color: #f9fafb;
+      }
+
+      .url-cell {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .pagination a {
+        padding: 8px 12px;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .pagination a:hover {
+        background: #1d4ed8;
+      }
+
+      .pagination a:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
+
+      .filter-form {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .filter-form input {
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .filter-form button {
+        padding: 8px 16px;
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .filter-form button:hover {
+        background: #059669;
+      }
+
+      .top-pages {
+        display: grid;
+        gap: 10px;
+      }
+
+      .top-page-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background: #f9fafb;
+        border-radius: 4px;
+      }
+
+      .page-url {
+        font-family: monospace;
+        font-size: 0.9em;
+        color: #374151;
+      }
+
+      .page-count {
+        background: #2563eb;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        font-weight: 600;
+      }
+
+      .nav-links {
+        margin-bottom: 20px;
+      }
+
+      .nav-links a {
+        color: #2563eb;
+        text-decoration: none;
+        margin-right: 15px;
+      }
+
+      .nav-links a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>📊 访问数据管理</h1>
+      <p>使用 astro-visits 工具类查询和展示访问数据</p>
+
+      <div class="nav-links">
+        <a href="/">🏠 首页</a>
+        <a href="/about">📄 关于页面</a>
+      </div>
+    </div>
+
+    <!-- 统计概览 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">{stats.totalVisits}</div>
+        <div class="stat-label">总访问量</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{stats.uniqueVisitors}</div>
+        <div class="stat-label">独立访客</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{stats.todayVisits}</div>
+        <div class="stat-label">今日访问</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">{visits.pagination.totalPages}</div>
+        <div class="stat-label">总页数</div>
+      </div>
+    </div>
+
+    <!-- 筛选表单 -->
+    <div class="section">
+      <h2>🔍 筛选访问记录</h2>
+      <form method="GET" class="filter-form">
+        <input
+          type="text"
+          name="url"
+          placeholder="筛选 URL（包含关键词）"
+          value={urlFilter || ''}
+        />
+        <input
+          type="number"
+          name="limit"
+          placeholder="每页数量"
+          value={limit}
+          min="1"
+          max="100"
+        />
+        <button type="submit">筛选</button>
+        {urlFilter && <a href="/admin">清除筛选</a>}
+      </form>
+    </div>
+
+    <!-- 访问记录表格 -->
+    <div class="section">
+      <h2>📋 访问记录</h2>
+      <p>
+        显示第 {visits.pagination.page} 页，共 {visits.pagination.totalPages} 页，总计
+        {visits.pagination.total} 条记录
+      </p>
+
+      <table class="visits-table">
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>URL</th>
+            <th>IP 地址</th>
+            <th>来源</th>
+            <th>语言</th>
+            <th>设备信息</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            visits.data.map((visit) => (
+              <tr>
+                <td>{new Date(visit.timestamp).toLocaleString('zh-CN')}</td>
+                <td class="url-cell" title={visit.url}>
+                  {visit.url}
+                </td>
+                <td>{visit.ip}</td>
+                <td title={visit.referrer}>
+                  {visit.referrer
+                    ? visit.referrer.length > 30
+                      ? visit.referrer.substring(0, 30) + '...'
+                      : visit.referrer
+                    : '-'}
+                </td>
+                <td>{visit.language}</td>
+                <td title={visit.user_agent}>
+                  {visit.user_agent.substring(0, 50)}...
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+
+      <!-- 分页 -->
+      <div class="pagination">
+        {
+          visits.pagination.page > 1 && (
+            <a
+              href={`/admin?page=${visits.pagination.page - 1}&limit=${limit}${urlFilter ? `&url=${encodeURIComponent(urlFilter)}` : ''}`}>
+              ← 上一页
+            </a>
+          )
+        }
+
+        <span>
+          第 {visits.pagination.page} 页，共 {visits.pagination.totalPages} 页
+        </span>
+
+        {
+          visits.pagination.page < visits.pagination.totalPages && (
+            <a
+              href={`/admin?page=${visits.pagination.page + 1}&limit=${limit}${urlFilter ? `&url=${encodeURIComponent(urlFilter)}` : ''}`}>
+              下一页 →
+            </a>
+          )
+        }
+      </div>
+    </div>
+
+    <!-- 热门页面 -->
+    <div class="section">
+      <h2>🔥 热门页面</h2>
+      <div class="top-pages">
+        {
+          topPages.map((page, index) => (
+            <div class="top-page-item">
+              <span class="page-url">{page.url}</span>
+              <span class="page-count">{page.count} 次访问</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <!-- 最近7天统计 -->
+    <div class="section">
+      <h2>📈 最近7天访问趋势</h2>
+      <div class="top-pages">
+        {
+          recentStats.map((day, index) => (
+            <div class="top-page-item">
+              <span class="page-url">{day.date}</span>
+              <span class="page-count">{day.count} 次访问</span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </body>
+</html>
