@@ -29,12 +29,12 @@ importers:
       '@astrojs/cloudflare':
         specifier: ^12.6.9
         version: 12.6.9(@types/node@24.6.0)(astro@5.14.1(@types/node@24.6.0)(rollup@4.52.3)(typescript@5.9.2)(yaml@2.8.1))(yaml@2.8.1)
+      '@coffic/astro-visits':
+        specifier: workspace:*
+        version: link:../astro-visits
       astro:
         specifier: ^5.14.1
         version: 5.14.1(@types/node@24.6.0)(rollup@4.52.3)(typescript@5.9.2)(yaml@2.8.1)
-      astro-visits:
-        specifier: workspace:*
-        version: link:../astro-visits
 
 packages:
 

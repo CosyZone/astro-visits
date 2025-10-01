@@ -1,10 +1,5 @@
 import type { AstroIntegration } from 'astro';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { readFileSync } from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { CLIENT_SCRIPT_TEMPLATE } from '../lib/client-script';
 
 export interface AstroVisitsOptions {
   /**
@@ -26,20 +21,20 @@ export default function astroVisitsIntegration(options: AstroVisitsOptions = {})
   return {
     name: 'astro-visits',
     hooks: {
-      'astro:config:setup': ({ injectScript, injectRoute, logger, config }) => {
+      'astro:config:setup': ({ injectScript, injectRoute, logger }) => {
         // 设置环境变量，让 API 路由知道使用哪个绑定名称
         process.env.ASTRO_VISITS_BINDING = binding;
 
-        // 注入客户端脚本以收集访问者信息（从独立文件读取并替换占位符）
-        const clientScriptPath = join(__dirname, 'client.js');
-        const clientScriptRaw = readFileSync(clientScriptPath, 'utf-8');
-        const clientScript = clientScriptRaw.replace(/%%DISABLE_IN_DEV%%/g, String(!trackDev));
+        // 使用模板生成客户端脚本
+        const disableInDev = !trackDev;
+        const clientScript = CLIENT_SCRIPT_TEMPLATE.replace('%%DISABLE_IN_DEV%%', JSON.stringify(disableInDev));
+
         injectScript('page', clientScript);
 
-        // 注入API路由
+        // 注入API路由 - 使用相对于example项目node_modules的路径
         injectRoute({
           pattern: '/api/visit',
-          entrypoint: join(__dirname, '..', 'pages', 'api', 'visit.ts')
+          entrypoint: './node_modules/@coffic/astro-visits/src/pages/api/visit.ts'
         });
 
         logger.info(`✅ Integration setup complete with binding: ${binding}`);

@@ -7,7 +7,7 @@
         "dev": "astro dev",
         "start": "astro dev",
         "build": "astro build",
-        "preview": "astro preview",
+        "preview": "wrangler dev ./dist/_worker.js/index.js",
         "astro": "astro"
     },
     "keywords": [
@@ -20,6 +20,6 @@
     "dependencies": {
         "@astrojs/cloudflare": "^12.6.9",
         "astro": "^5.14.1",
-        "astro-visits": "workspace:*"
+        "@coffic/astro-visits": "workspace:*"
     }
 }

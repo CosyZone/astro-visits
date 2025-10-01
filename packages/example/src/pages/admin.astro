@@ -1,6 +1,8 @@
 ---
 import { VisitsQuery } from 'astro-visits';
 
+export const prerender = false;
+
 // 创建查询实例（直接传递 Astro.locals）
 const visitsQuery = new VisitsQuery(Astro.locals);
 

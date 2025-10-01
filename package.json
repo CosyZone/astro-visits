@@ -6,7 +6,8 @@
   "scripts": {
     "build": "pnpm -r build",
     "dev": "pnpm --filter example dev",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "preview": "pnpm --filter example preview"
   },
   "packageManager": "pnpm@10.12.1",
   "engines": {

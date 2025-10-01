@@ -1,17 +1,17 @@
 {
-  "name": "astro-visits",
+  "name": "@coffic/astro-visits",
   "version": "1.0.3",
   "description": "An Astro integration for tracking visitor information and storing it in Cloudflare D1 database",
   "type": "module",
   "main": "index.ts",
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.ts",
+    "./visits.ts": "./api/visits.ts"
   },
   "types": "index.ts",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
