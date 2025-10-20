@@ -23,26 +23,15 @@
 
 ## 安装
 
+使用 Astro 提供的便捷命令来安装和配置此集成：
+
 ```bash
-npm install astro-visits
+astro add astro-visits
 ```
 
 ## 使用方法
 
-将集成添加到您的 Astro 配置中：
-
-```javascript
-// astro.config.mjs
-import { defineConfig } from 'astro/config';
-import astroVisits from 'astro-visits';
-
-export default defineConfig({
-  integrations: [astroVisits({
-    binding: 'VISITS_DB', // 您的 D1 数据库绑定名称
-    trackDev: false       // 是否在开发模式下跟踪
-  })],
-});
-```
+使用 `astro add` 命令安装后，集成将自动添加到您的 Astro 配置中。
 
 该集成将自动：
 

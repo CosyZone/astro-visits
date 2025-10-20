@@ -23,26 +23,15 @@ An Astro integration for tracking visitor information and storing it in Cloudfla
 
 ## Installation
 
+Use the convenient Astro command to install and configure this integration:
+
 ```bash
-npm install astro-visits
+astro add astro-visits
 ```
 
 ## Usage
 
-Add the integration to your Astro config:
-
-```javascript
-// astro.config.mjs
-import { defineConfig } from 'astro/config';
-import astroVisits from 'astro-visits';
-
-export default defineConfig({
-  integrations: [astroVisits({
-    binding: 'VISITS_DB', // Your D1 database binding name
-    trackDev: false       // Whether to track in development mode
-  })],
-});
-```
+After using the `astro add` command, the integration will be automatically added to your Astro configuration.
 
 The integration will automatically:
 
