@@ -31,7 +31,7 @@ npm install astro-visits
 
 将集成添加到您的 Astro 配置中：
 
-```js
+```javascript
 // astro.config.mjs
 import { defineConfig } from 'astro/config';
 import astroVisits from 'astro-visits';
@@ -45,41 +45,25 @@ export default defineConfig({
 ```
 
 该集成将自动：
+
 1. 在每个页面中注入客户端脚本以收集访问者信息
 2. 注入服务器端 API 路由 `/api/visit` 用于接收和存储数据
 
 ## Cloudflare 设置
 
 1. 创建 D1 数据库：
+
    ```bash
    wrangler d1 create visits-db
    ```
 
 2. 更新您的 `wrangler.toml`：
+
    ```toml
    [[ d1_databases ]]
    binding = "VISITS_DB"
    database_name = "visits-db"
    database_id = "your-database-id"
-   ```
-
-3. 创建数据库表结构：
-   ```sql
-   CREATE TABLE IF NOT EXISTS visits (
-       id INTEGER PRIMARY KEY AUTOINCREMENT,
-       timestamp TEXT NOT NULL,
-       url TEXT NOT NULL,
-       referrer TEXT,
-       user_agent TEXT,
-       language TEXT,
-       cookies TEXT,
-       screen_width INTEGER,
-       screen_height INTEGER,
-       color_depth INTEGER,
-       timezone TEXT,
-       ip TEXT,
-       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-   );
    ```
 
 ## 工作原理
@@ -97,7 +81,7 @@ export default defineConfig({
 
 本项目使用 pnpm workspaces 的 monorepo 结构：
 
-```
+```text
 astro-visits/
 ├── package.json              # 根目录的包管理配置
 ├── pnpm-workspace.yaml       # pnpm workspace 配置
@@ -138,7 +122,7 @@ cd packages/example
 pnpm dev
 ```
 
-这将启动示例 Astro 项目，运行在可用端口上（例如 http://localhost:4328）
+这将启动示例 Astro 项目，运行在可用端口上
 
 ### 构建集成
 

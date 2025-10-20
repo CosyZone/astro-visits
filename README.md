@@ -31,7 +31,7 @@ npm install astro-visits
 
 Add the integration to your Astro config:
 
-```js
+```javascript
 // astro.config.mjs
 import { defineConfig } from 'astro/config';
 import astroVisits from 'astro-visits';
@@ -45,41 +45,25 @@ export default defineConfig({
 ```
 
 The integration will automatically:
+
 1. Inject a client-side script into every page to collect visitor information
 2. Inject a server-side API route at `/api/visit` to receive and store the data
 
 ## Cloudflare Setup
 
 1. Create a D1 database:
+
    ```bash
    wrangler d1 create visits-db
    ```
 
 2. Update your `wrangler.toml`:
+
    ```toml
    [[ d1_databases ]]
    binding = "VISITS_DB"
    database_name = "visits-db"
    database_id = "your-database-id"
-   ```
-
-3. Create the database schema:
-   ```sql
-   CREATE TABLE IF NOT EXISTS visits (
-       id INTEGER PRIMARY KEY AUTOINCREMENT,
-       timestamp TEXT NOT NULL,
-       url TEXT NOT NULL,
-       referrer TEXT,
-       user_agent TEXT,
-       language TEXT,
-       cookies TEXT,
-       screen_width INTEGER,
-       screen_height INTEGER,
-       color_depth INTEGER,
-       timezone TEXT,
-       ip TEXT,
-       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-   );
    ```
 
 ## How It Works
@@ -97,7 +81,7 @@ The integration automatically injects tracking JavaScript into every page that c
 
 This project uses a monorepo structure with pnpm workspaces:
 
-```
+```text
 astro-visits/
 ├── package.json              # Root package.json for workspace management
 ├── pnpm-workspace.yaml       # pnpm workspace configuration
@@ -138,7 +122,7 @@ cd packages/example
 pnpm dev
 ```
 
-This will start the example Astro project on an available port (e.g. http://localhost:4328)
+This will start the example Astro project on an available port
 
 ### Build the integration
 
