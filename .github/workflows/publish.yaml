@@ -78,7 +78,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: 'v${{ steps.version.outputs.new_version }}'
-          name: 'astro-visits v${{ steps.version.outputs.new_version }}'
+          name: 'v${{ steps.version.outputs.new_version }}'
           body: |
             ## astro-visits v${{ steps.version.outputs.new_version }}
 
