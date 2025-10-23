@@ -1,6 +1,6 @@
 {
   "name": "@coffic/astro-visits",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "An Astro integration for tracking visitor information and storing it in Cloudflare D1 database",
   "type": "module",
   "main": "index.ts",
