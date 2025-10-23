@@ -93,18 +93,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
                 visitData.ip
             ).run();
 
-            console.log('Visit recorded:', {
-                url: visitData.url,
-                ip: visitData.ip,
-                timestamp: visitData.timestamp
-            });
-
-            return new Response(JSON.stringify({ success: true, message: 'Visit recorded' }), {
-                status: 200,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            return new Response();
         } catch (dbError) {
             console.error('Database error:', {
                 url: visitData?.url || 'unknown',
