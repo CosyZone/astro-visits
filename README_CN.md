@@ -19,7 +19,6 @@
 - 自动注入服务器端 API 路由用于数据收集
 - 将数据存储在 Cloudflare D1 数据库中
 - 支持 Cloudflare Workers
-- 支持开发模式
 
 ## 安装
 
@@ -64,7 +63,28 @@ astro add astro-visits
 | 选项 | 类型 | 默认值 | 描述 |
 |------|------|--------|------|
 | `binding` | `string` | `'VISITS_DB'` | Cloudflare D1 数据库绑定名称 |
-| `trackDev` | `boolean` | `false` | 是否在开发模式下跟踪访问 |
+| `ignorePaths` | `string[]` | `[]` | 要忽略的路径（不会跟踪访问）。支持精确匹配和通配符模式 |
+
+### 配置示例
+
+```javascript
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+import astroVisits from '@coffic/astro-visits';
+
+export default defineConfig({
+  integrations: [
+    astroVisits({
+      // 忽略特定路径 - 支持精确匹配和通配符模式
+      ignorePaths: [
+        '/admin',           // 精确匹配：忽略 /admin
+        '/api/*',          // 通配符：忽略所有以 /api/ 开头的路径
+        '/private/*',      // 通配符：忽略所有以 /private/ 开头的路径
+      ],
+    }),
+  ],
+});
+```
 
 ## 开发
 

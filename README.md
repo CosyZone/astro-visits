@@ -19,7 +19,6 @@ An Astro integration for tracking visitor information and storing it in Cloudfla
 - Automatically injects server-side API route for data collection
 - Stores data in Cloudflare D1 database
 - Works with Cloudflare Workers
-- Development mode support
 
 ## Installation
 
@@ -64,7 +63,28 @@ The integration automatically injects tracking JavaScript into every page that c
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `binding` | `string` | `'VISITS_DB'` | The Cloudflare D1 database binding name |
-| `trackDev` | `boolean` | `false` | Whether to track visits in development mode |
+| `ignorePaths` | `string[]` | `[]` | Paths to ignore (won't track visits). Supports exact match and wildcard patterns |
+
+### Example Configuration
+
+```javascript
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+import astroVisits from '@coffic/astro-visits';
+
+export default defineConfig({
+  integrations: [
+    astroVisits({
+      // Ignore specific paths - supports exact match and wildcard patterns
+      ignorePaths: [
+        '/admin',           // Exact match: ignore /admin
+        '/api/*',          // Wildcard: ignore all paths starting with /api/
+        '/private/*',      // Wildcard: ignore all paths starting with /private/
+      ],
+    }),
+  ],
+});
+```
 
 ## Development
 

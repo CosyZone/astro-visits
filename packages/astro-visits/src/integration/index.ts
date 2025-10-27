@@ -1,26 +1,26 @@
 import type { AstroIntegration } from 'astro';
-import { CLIENT_SCRIPT_TEMPLATE } from '../lib/client-script';
+import { generateClientScript } from './client-script';
 
 export interface AstroVisitsOptions {
   /**
-   * Whether to track in development mode
-   * @default false
+   * Paths to ignore (won't track visits)
+   * Supports exact match and wildcard patterns
+   * @example ['/admin', '/api/*', '/private/*']
+   * @default []
    */
-  trackDev?: boolean;
+  ignorePaths?: string[];
 }
 
 export default function astroVisitsIntegration(options: AstroVisitsOptions = {}): AstroIntegration {
-  const { trackDev = false } = options;
+  const { ignorePaths = [] } = options;
 
   return {
     name: '@coffic/astro-visits',
     hooks: {
       'astro:config:setup': ({ injectScript, injectRoute, logger }) => {
-        // 使用模板生成客户端脚本
-        const disableInDev = !trackDev;
-        const clientScript = CLIENT_SCRIPT_TEMPLATE.replace('%%DISABLE_IN_DEV%%', JSON.stringify(disableInDev));
-
-        injectScript('page', `import "@coffic/astro-visits/client.js";`);
+        // 生成客户端脚本
+        const clientScript = generateClientScript(ignorePaths);
+        injectScript('page', clientScript);
 
         // 注入API路由 - 使用相对于example项目node_modules的路径
         // 设置 prerender: false 因为这是一个 API 路由，需要在服务器端动态处理
@@ -30,7 +30,11 @@ export default function astroVisitsIntegration(options: AstroVisitsOptions = {})
           prerender: false
         });
 
-        logger.info(`✅ Integration setup complete`);
+        if (ignorePaths.length > 0) {
+          logger.info(`✅ Integration setup complete (ignoring ${ignorePaths.length} path(s))`);
+        } else {
+          logger.info(`✅ Integration setup complete`);
+        }
       },
     },
   };
