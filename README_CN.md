@@ -19,6 +19,10 @@
 - 自动注入服务器端 API 路由用于数据收集
 - 将数据存储在 Cloudflare D1 数据库中
 - 支持 Cloudflare Workers
+- 增强的统计 API - 支持独立访客数和机器人检测
+- 时间范围支持 - 聚合查询支持时间过滤
+- User Agent 解析工具 - 设备、操作系统、浏览器识别
+- 多维度统计 - 设备、OS、浏览器、时区统计
 
 ## 安装
 
@@ -57,6 +61,92 @@ astro add astro-visits
 ## 工作原理
 
 该集成会自动在每个页面中注入跟踪 JavaScript，收集访问者信息并发送到 `/api/visit` 端点。端点随后将这些信息存储在您的 Cloudflare D1 数据库中。
+
+## 查询 API
+
+数据收集完成后，您可以使用 `VisitsQuery` 类来查询和分析访问数据。
+
+### 基础用法
+
+```typescript
+import { VisitsQuery } from '@coffic/astro-visits';
+
+// 在 Astro API 路由或页面中
+const visitsQuery = new VisitsQuery(Astro.locals);
+
+// 获取基础统计
+const stats = await visitsQuery.getStats();
+
+// 获取最近的访问记录
+const visits = await visitsQuery.getVisits({ limit: 50 });
+```
+
+### 增强的趋势统计
+
+```typescript
+// 获取包含独立访客数和机器人统计的趋势数据
+const trends = await visitsQuery.getTrendStats(7, {
+  includeUniqueVisitors: true,
+  includeBotStats: true
+});
+// 返回: [{ date: '2025-10-31', count: 100, uniqueVisitors: 50, botCount: 10, humanCount: 90 }, ...]
+```
+
+### 支持时间范围的热门页面
+
+```typescript
+// 获取最近 7 天的热门页面
+const topPages = await visitsQuery.getTopPages(20, { days: 7 });
+
+// 获取指定时间范围的热门页面
+const topPagesMonth = await visitsQuery.getTopPages(20, {
+  startDate: '2025-10-01',
+  endDate: '2025-10-31'
+});
+```
+
+### 多维度统计
+
+```typescript
+// 设备统计
+const deviceStats = await visitsQuery.getDeviceStats({ days: 30 });
+
+// 操作系统统计
+const osStats = await visitsQuery.getOSStats({ days: 30 });
+
+// 浏览器统计
+const browserStats = await visitsQuery.getBrowserStats({ days: 30 });
+
+// 时区统计
+const timezoneStats = await visitsQuery.getTimezoneStats({ days: 30, limit: 20 });
+```
+
+### 通用聚合查询
+
+```typescript
+// 灵活的按任意维度聚合
+const results = await visitsQuery.aggregate({
+  groupBy: 'device',  // 或 'os', 'browser', 'url', 'timezone', 'date'
+  days: 30,
+  limit: 10,
+  orderBy: 'count',
+  orderDirection: 'desc'
+});
+```
+
+### User Agent 工具函数
+
+```typescript
+import { parseUserAgent, isBot } from '@coffic/astro-visits';
+
+// 解析 User Agent
+const parsed = parseUserAgent(userAgentString);
+// 返回: { device: 'desktop', os: 'macOS', browser: 'Chrome', isBot: false }
+
+// 快速检测是否为机器人
+const isBotUser = isBot(userAgentString);
+// 返回: true/false
+```
 
 ## 配置选项
 
@@ -132,6 +222,32 @@ pnpm dev
 ```
 
 这将启动示例 Astro 项目，运行在可用端口上
+
+## API 参考
+
+### VisitsQuery 类
+
+用于查询访问数据的主类。使用 `new VisitsQuery(locals)` 实例化。
+
+#### 方法
+
+- `getVisits(options?)` - 获取分页的访问记录
+- `getStats()` - 获取总体统计
+- `getRecentStats(days)` - 获取最近几天的每日统计
+- `getTrendStats(days, options?)` - 获取增强的趋势统计（包含独立访客数和机器人统计）
+- `getTopPages(limit, options?)` - 获取热门页面（支持时间范围）
+- `getDeviceStats(options?)` - 获取设备类型统计
+- `getOSStats(options?)` - 获取操作系统统计
+- `getBrowserStats(options?)` - 获取浏览器统计
+- `getTimezoneStats(options?)` - 获取时区统计
+- `aggregate(options)` - 通用聚合查询
+
+### 工具函数
+
+- `parseUserAgent(userAgent: string)` - 解析 User Agent 字符串
+- `isBot(userAgent: string)` - 检测是否为机器人
+
+详细的 API 文档，请参阅[使用示例](./USAGE_EXAMPLES.md)文件。
 
 ### 构建集成
 

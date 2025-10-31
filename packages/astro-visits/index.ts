@@ -9,5 +9,16 @@ export type {
     VisitRecord,
     VisitQueryOptions,
     VisitQueryResult,
-    VisitStats
+    VisitStats,
+    DailyStats,
+    AggregateOptions,
+    AggregateResult,
+    DeviceStats,
+    OSStats,
+    BrowserStats,
+    TimezoneStats
 } from './src/types/visit';
+
+// 导出 User Agent 工具
+export { parseUserAgent, isBot } from './src/lib/user-agent';
+export type { ParsedUserAgent } from './src/types/user-agent';

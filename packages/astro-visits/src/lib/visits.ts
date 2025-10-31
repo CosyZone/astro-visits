@@ -1,4 +1,17 @@
-import type { VisitQueryOptions, VisitQueryResult, VisitRecord, VisitStats } from '../types/visit';
+import type {
+    VisitQueryOptions,
+    VisitQueryResult,
+    VisitRecord,
+    VisitStats,
+    DailyStats,
+    AggregateOptions,
+    AggregateResult,
+    DeviceStats,
+    OSStats,
+    BrowserStats,
+    TimezoneStats
+} from '../types/visit';
+import { parseUserAgent, isBot } from './user-agent';
 
 /**
  * 访问数据查询工具类
@@ -233,26 +246,147 @@ export class VisitsQuery {
         const result = await this.db.prepare(`
       SELECT DATE(timestamp) as date, COUNT(*) as count
       FROM visits 
-      WHERE timestamp >= datetime('now', '-${days} days')
+      WHERE timestamp >= datetime('now', '-' || ? || ' days')
       GROUP BY DATE(timestamp)
       ORDER BY date DESC
-    `).all();
+    `).bind(days).all();
 
         return result.results || [];
     }
 
     /**
-     * 获取热门页面（按访问量排序）
+     * 获取访问趋势统计（增强版）
+     * @param days - 最近 N 天
+     * @param options - 选项：包含独立访客数、机器人统计
      */
-    async getTopPages(limit: number = 10): Promise<Array<{ url: string; count: number }>> {
-        const result = await this.db.prepare(`
+    async getTrendStats(
+        days: number = 7,
+        options: {
+            includeUniqueVisitors?: boolean;
+            includeBotStats?: boolean;
+        } = {}
+    ): Promise<DailyStats[]> {
+        const { includeUniqueVisitors = false, includeBotStats = false } = options;
+
+        // 构建基础查询
+        let query = `
+      SELECT 
+        DATE(timestamp) as date,
+        COUNT(*) as count
+    `;
+
+        // 如果需要独立访客数
+        if (includeUniqueVisitors) {
+            query += `, COUNT(DISTINCT ip) as uniqueVisitors`;
+        }
+
+        // 如果需要机器人统计（需要在应用层解析）
+        if (includeBotStats) {
+            query += `, GROUP_CONCAT(user_agent) as user_agents`;
+        }
+
+        query += `
+      FROM visits 
+      WHERE timestamp >= datetime('now', '-' || ? || ' days')
+      GROUP BY DATE(timestamp)
+      ORDER BY date DESC
+    `;
+
+        const result = await this.db.prepare(query).bind(days).all();
+        const rawData = result.results || [];
+
+        // 处理机器人统计（应用层处理）
+        if (includeBotStats) {
+            return rawData.map((row: any) => {
+                const userAgents = row.user_agents ? row.user_agents.split(',') : [];
+                let botCount = 0;
+                let humanCount = 0;
+
+                userAgents.forEach((ua: string) => {
+                    if (isBot(ua)) {
+                        botCount++;
+                    } else {
+                        humanCount++;
+                    }
+                });
+
+                const stats: DailyStats = {
+                    date: row.date,
+                    count: row.count,
+                    botCount,
+                    humanCount
+                };
+
+                if (includeUniqueVisitors) {
+                    stats.uniqueVisitors = row.uniqueVisitors;
+                }
+
+                return stats;
+            });
+        }
+
+        // 不需要机器人统计的情况
+        return rawData.map((row: any) => {
+            const stats: DailyStats = {
+                date: row.date,
+                count: row.count
+            };
+
+            if (includeUniqueVisitors) {
+                stats.uniqueVisitors = row.uniqueVisitors;
+            }
+
+            return stats;
+        });
+    }
+
+    /**
+     * 获取热门页面（按访问量排序）
+     * @param limit - 返回数量限制
+     * @param options - 时间范围选项
+     */
+    async getTopPages(
+        limit: number = 10,
+        options: {
+            days?: number;
+            startDate?: string;
+            endDate?: string;
+        } = {}
+    ): Promise<Array<{ url: string; count: number }>> {
+        const { days, startDate, endDate } = options;
+
+        const whereConditions: string[] = [];
+        const bindValues: any[] = [];
+
+        if (days) {
+            whereConditions.push(`timestamp >= datetime('now', '-' || ? || ' days')`);
+            bindValues.push(days);
+        }
+
+        if (startDate) {
+            whereConditions.push('timestamp >= ?');
+            bindValues.push(startDate);
+        }
+
+        if (endDate) {
+            whereConditions.push('timestamp <= ?');
+            bindValues.push(endDate);
+        }
+
+        const whereClause = whereConditions.length > 0
+            ? `WHERE ${whereConditions.join(' AND ')}`
+            : '';
+
+        const query = `
       SELECT url, COUNT(*) as count 
       FROM visits 
+      ${whereClause}
       GROUP BY url 
       ORDER BY count DESC 
       LIMIT ?
-    `).bind(limit).all();
+    `;
 
+        const result = await this.db.prepare(query).bind(...bindValues, limit).all();
         return result.results || [];
     }
 
@@ -270,5 +404,227 @@ export class VisitsQuery {
     `).bind(limit).all();
 
         return result.results || [];
+    }
+
+    /**
+     * 通用聚合查询
+     * @param options - 聚合查询选项
+     */
+    async aggregate(options: AggregateOptions): Promise<AggregateResult[]> {
+        const {
+            groupBy,
+            startDate,
+            endDate,
+            days,
+            limit = 100,
+            orderBy = 'count',
+            orderDirection = 'desc'
+        } = options;
+
+        // 构建 WHERE 条件
+        const whereConditions: string[] = [];
+        const bindValues: any[] = [];
+
+        if (days) {
+            whereConditions.push(`timestamp >= datetime('now', '-' || ? || ' days')`);
+            bindValues.push(days);
+        }
+
+        if (startDate) {
+            whereConditions.push('timestamp >= ?');
+            bindValues.push(startDate);
+        }
+
+        if (endDate) {
+            whereConditions.push('timestamp <= ?');
+            bindValues.push(endDate);
+        }
+
+        const whereClause = whereConditions.length > 0
+            ? `WHERE ${whereConditions.join(' AND ')}`
+            : '';
+
+        // 根据 groupBy 确定分组字段
+        let groupField: string;
+        let needsPostProcessing = false;
+
+        switch (groupBy) {
+            case 'url':
+                groupField = 'url';
+                break;
+            case 'timezone':
+                groupField = 'timezone';
+                break;
+            case 'date':
+                groupField = 'DATE(timestamp)';
+                break;
+            case 'device':
+            case 'os':
+            case 'browser':
+                // 这些需要在应用层解析 user_agent
+                groupField = 'user_agent';
+                needsPostProcessing = true;
+                break;
+            default:
+                throw new Error(`Unsupported groupBy: ${groupBy}`);
+        }
+
+        // 执行查询
+        let query = `
+      SELECT ${groupField} as group_key, COUNT(*) as count
+    `;
+
+        if (needsPostProcessing) {
+            query += `, GROUP_CONCAT(user_agent) as user_agents`;
+        }
+
+        query += `
+      FROM visits 
+      ${whereClause}
+      GROUP BY ${groupField}
+    `;
+
+        // 排序
+        if (orderBy === 'date' && groupBy === 'date') {
+            query += ` ORDER BY ${groupField} ${orderDirection.toUpperCase()}`;
+        } else if (orderBy === 'count') {
+            query += ` ORDER BY count ${orderDirection.toUpperCase()}`;
+        }
+
+        query += ` LIMIT ?`;
+
+        const result = await this.db.prepare(query).bind(...bindValues, limit).all();
+        const rawData = result.results || [];
+
+        // 如果需要后处理（设备/OS/浏览器解析）
+        if (needsPostProcessing) {
+            const aggregated = new Map<string, number>();
+
+            rawData.forEach((row: any) => {
+                const userAgents = row.user_agents ? row.user_agents.split(',') : [];
+
+                userAgents.forEach((ua: string) => {
+                    const parsed = parseUserAgent(ua);
+                    let key: string;
+
+                    switch (groupBy) {
+                        case 'device':
+                            key = parsed.device;
+                            break;
+                        case 'os':
+                            key = parsed.os;
+                            break;
+                        case 'browser':
+                            key = parsed.browser;
+                            break;
+                        default:
+                            key = 'unknown';
+                    }
+
+                    aggregated.set(key, (aggregated.get(key) || 0) + 1);
+                });
+            });
+
+            // 转换为数组并排序
+            const results = Array.from(aggregated.entries())
+                .map(([key, count]) => ({ key, count }))
+                .sort((a, b) => {
+                    if (orderBy === 'count') {
+                        return orderDirection === 'desc' ? b.count - a.count : a.count - b.count;
+                    }
+                    return 0;
+                })
+                .slice(0, limit);
+
+            return results;
+        }
+
+        // 不需要后处理的情况
+        return rawData.map((row: any) => ({
+            key: String(row.group_key || ''),
+            count: row.count
+        }));
+    }
+
+    /**
+     * 获取设备统计
+     * @param options - 时间范围选项
+     */
+    async getDeviceStats(options: {
+        days?: number;
+        startDate?: string;
+        endDate?: string;
+    } = {}): Promise<DeviceStats[]> {
+        const results = await this.aggregate({
+            groupBy: 'device',
+            ...options
+        });
+
+        return results.map(r => ({
+            device: r.key,
+            count: r.count
+        }));
+    }
+
+    /**
+     * 获取操作系统统计
+     * @param options - 时间范围选项
+     */
+    async getOSStats(options: {
+        days?: number;
+        startDate?: string;
+        endDate?: string;
+    } = {}): Promise<OSStats[]> {
+        const results = await this.aggregate({
+            groupBy: 'os',
+            ...options
+        });
+
+        return results.map(r => ({
+            os: r.key,
+            count: r.count
+        }));
+    }
+
+    /**
+     * 获取浏览器统计
+     * @param options - 时间范围选项
+     */
+    async getBrowserStats(options: {
+        days?: number;
+        startDate?: string;
+        endDate?: string;
+    } = {}): Promise<BrowserStats[]> {
+        const results = await this.aggregate({
+            groupBy: 'browser',
+            ...options
+        });
+
+        return results.map(r => ({
+            browser: r.key,
+            count: r.count
+        }));
+    }
+
+    /**
+     * 获取时区统计
+     * @param options - 时间范围选项
+     */
+    async getTimezoneStats(options: {
+        days?: number;
+        startDate?: string;
+        endDate?: string;
+        limit?: number;
+    } = {}): Promise<TimezoneStats[]> {
+        const results = await this.aggregate({
+            groupBy: 'timezone',
+            limit: options.limit || 50,
+            ...options
+        });
+
+        return results.map(r => ({
+            timezone: r.key,
+            count: r.count
+        }));
     }
 }
