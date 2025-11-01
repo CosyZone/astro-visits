@@ -1,5 +1,6 @@
 ---
 import { VisitsQuery } from '@coffic/astro-visits';
+import { isBot } from '@coffic/astro-visits';
 
 export const prerender = false;
 
@@ -293,6 +294,29 @@ const recentStats = await visitsQuery.getRecentStats(7);
       .message.show {
         display: block;
       }
+
+      .visitor-type {
+        text-align: center;
+      }
+
+      .visitor-type-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75em;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .visitor-type-badge.bot {
+        background: #fef3c7;
+        color: #92400e;
+      }
+
+      .visitor-type-badge.human {
+        background: #dbeafe;
+        color: #1e40af;
+      }
     </style>
   </head>
   <body>
@@ -394,6 +418,7 @@ const recentStats = await visitsQuery.getRecentStats(7);
             <th>IP 地址</th>
             <th>来源</th>
             <th>语言</th>
+            <th>访问者类型</th>
             <th>设备信息</th>
             <th class="action-column">操作</th>
           </tr>
@@ -423,6 +448,13 @@ const recentStats = await visitsQuery.getRecentStats(7);
                     : '-'}
                 </td>
                 <td>{visit.language}</td>
+                <td class="visitor-type">
+                  {isBot(visit.user_agent || '') ? (
+                    <span class="visitor-type-badge bot">🤖 机器人</span>
+                  ) : (
+                    <span class="visitor-type-badge human">👤 人类</span>
+                  )}
+                </td>
                 <td title={visit.user_agent}>
                   {visit.user_agent.substring(0, 50)}...
                 </td>

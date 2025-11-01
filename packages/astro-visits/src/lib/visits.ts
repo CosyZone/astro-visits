@@ -281,8 +281,9 @@ export class VisitsQuery {
         }
 
         // 如果需要机器人统计（需要在应用层解析）
+        // 使用自定义分隔符 ||| 避免 user_agent 中包含逗号导致分割错误
         if (includeBotStats) {
-            query += `, GROUP_CONCAT(user_agent) as user_agents`;
+            query += `, GROUP_CONCAT(user_agent, '|||') as user_agents`;
         }
 
         query += `
@@ -298,7 +299,8 @@ export class VisitsQuery {
         // 处理机器人统计（应用层处理）
         if (includeBotStats) {
             return rawData.map((row: any) => {
-                const userAgents = row.user_agents ? row.user_agents.split(',') : [];
+                // 使用自定义分隔符 ||| 分割 user_agent
+                const userAgents = row.user_agents ? row.user_agents.split('|||').filter((ua: string) => ua.trim() !== '') : [];
                 let botCount = 0;
                 let humanCount = 0;
 
@@ -309,6 +311,22 @@ export class VisitsQuery {
                         humanCount++;
                     }
                 });
+
+                // 确保 botCount + humanCount <= count（理论上应该相等）
+                // 如果出现不一致，使用 count 作为基准进行修正
+                const totalDetected = botCount + humanCount;
+                if (totalDetected !== row.count) {
+                    // 如果检测到的总数与数据库记录数不一致，按比例调整
+                    if (totalDetected > 0) {
+                        const ratio = row.count / totalDetected;
+                        botCount = Math.round(botCount * ratio);
+                        humanCount = row.count - botCount; // 确保总数等于 count
+                    } else {
+                        // 如果无法检测（所有 user_agent 都为空），默认全部为 human
+                        humanCount = row.count;
+                        botCount = 0;
+                    }
+                }
 
                 const stats: DailyStats = {
                     date: row.date,
