@@ -178,7 +178,7 @@ export class VisitsQuery {
     async deleteVisit(id: number): Promise<boolean> {
         try {
             const result = await this.db.prepare('DELETE FROM visits WHERE id = ?').bind(id).run();
-            return result.changes > 0;
+            return result.meta.changes > 0;
         } catch (error) {
             console.error('Delete visit error:', error);
             return false;
@@ -195,7 +195,7 @@ export class VisitsQuery {
             const placeholders = ids.map(() => '?').join(',');
             const result = await this.db.prepare(`DELETE FROM visits WHERE id IN (${placeholders})`)
                 .bind(...ids).run();
-            return result.changes;
+            return result.meta.changes;
         } catch (error) {
             console.error('Batch delete visits error:', error);
             return 0;

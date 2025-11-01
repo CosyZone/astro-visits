@@ -215,6 +215,84 @@ const recentStats = await visitsQuery.getRecentStats(7);
       .nav-links a:hover {
         text-decoration: underline;
       }
+
+      .actions-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #f9fafb;
+        border-radius: 4px;
+      }
+
+      .batch-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .delete-btn {
+        padding: 6px 12px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.2s;
+      }
+
+      .delete-btn:hover {
+        background: #dc2626;
+      }
+
+      .delete-btn:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
+
+      .delete-btn.single {
+        padding: 4px 8px;
+        font-size: 12px;
+      }
+
+      .checkbox-column {
+        width: 40px;
+        text-align: center;
+      }
+
+      .action-column {
+        width: 80px;
+        text-align: center;
+      }
+
+      .select-all-checkbox {
+        cursor: pointer;
+      }
+
+      .message {
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        display: none;
+      }
+
+      .message.success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+      }
+
+      .message.error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #ef4444;
+      }
+
+      .message.show {
+        display: block;
+      }
     </style>
   </head>
   <body>
@@ -279,21 +357,59 @@ const recentStats = await visitsQuery.getRecentStats(7);
         {visits.pagination.total} 条记录
       </p>
 
+      <div id="message" class="message"></div>
+
+      <div class="actions-bar">
+        <div class="batch-actions">
+          <input
+            type="checkbox"
+            id="selectAll"
+            class="select-all-checkbox"
+            title="全选/取消全选"
+          />
+          <span id="selectedCount">已选择 0 项</span>
+          <button
+            id="batchDeleteBtn"
+            class="delete-btn"
+            disabled
+            data-action="delete-batch">
+            批量删除
+          </button>
+        </div>
+      </div>
+
       <table class="visits-table">
         <thead>
           <tr>
+            <th class="checkbox-column">
+              <input
+                type="checkbox"
+                id="selectAllHeader"
+                class="select-all-checkbox"
+                title="全选/取消全选"
+              />
+            </th>
             <th>时间</th>
             <th>URL</th>
             <th>IP 地址</th>
             <th>来源</th>
             <th>语言</th>
             <th>设备信息</th>
+            <th class="action-column">操作</th>
           </tr>
         </thead>
         <tbody>
           {
             visits.data.map((visit) => (
-              <tr>
+              <tr data-visit-id={visit.id}>
+                <td class="checkbox-column">
+                  <input
+                    type="checkbox"
+                    class="visit-checkbox"
+                    value={visit.id}
+                    onchange="updateSelectedCount()"
+                  />
+                </td>
                 <td>{new Date(visit.timestamp).toLocaleString('zh-CN')}</td>
                 <td class="url-cell" title={visit.url}>
                   {visit.url}
@@ -309,6 +425,15 @@ const recentStats = await visitsQuery.getRecentStats(7);
                 <td>{visit.language}</td>
                 <td title={visit.user_agent}>
                   {visit.user_agent.substring(0, 50)}...
+                </td>
+                <td class="action-column">
+                  <button
+                    class="delete-btn single"
+                    data-visit-id={visit.id}
+                    data-action="delete-single"
+                    title="删除这条记录">
+                    删除
+                  </button>
                 </td>
               </tr>
             ))
@@ -371,5 +496,177 @@ const recentStats = await visitsQuery.getRecentStats(7);
         }
       </div>
     </div>
+
+    <script>
+      // 初始化变量
+      const selectAllCheckboxes = document.querySelectorAll(
+        '.select-all-checkbox',
+      );
+      const visitCheckboxes = document.querySelectorAll('.visit-checkbox');
+      const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+      const selectedCountSpan = document.getElementById('selectedCount');
+
+      // 全选/取消全选功能
+      selectAllCheckboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', function () {
+          visitCheckboxes.forEach((cb) => {
+            if (cb instanceof HTMLInputElement) {
+              cb.checked = (this as HTMLInputElement).checked;
+            }
+          });
+          updateSelectedCount();
+        });
+      });
+
+      // 更新选中数量
+      function updateSelectedCount() {
+        const checked = document.querySelectorAll('.visit-checkbox:checked');
+        const count = checked.length;
+        if (selectedCountSpan) {
+          selectedCountSpan.textContent = `已选择 ${count} 项`;
+        }
+        if (batchDeleteBtn instanceof HTMLButtonElement) {
+          batchDeleteBtn.disabled = count === 0;
+        }
+
+        // 更新全选复选框状态
+        selectAllCheckboxes.forEach((cb) => {
+          if (cb instanceof HTMLInputElement) {
+            cb.checked =
+              count === visitCheckboxes.length && visitCheckboxes.length > 0;
+            cb.indeterminate = count > 0 && count < visitCheckboxes.length;
+          }
+        });
+      }
+
+      // 显示消息
+      function showMessage(text, type = 'success') {
+        const messageEl = document.getElementById('message');
+        if (messageEl) {
+          messageEl.textContent = text;
+          messageEl.className = `message ${type} show`;
+          setTimeout(() => {
+            messageEl.classList.remove('show');
+          }, 3000);
+        }
+      }
+
+      // 删除单条记录
+      async function deleteVisit(id) {
+        if (!confirm('确定要删除这条访问记录吗？')) {
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/delete-visits', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id }),
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            showMessage('删除成功', 'success');
+            // 移除对应的表格行
+            const row = document.querySelector(`tr[data-visit-id="${id}"]`);
+            if (row) {
+              row.remove();
+              updateSelectedCount();
+            }
+            // 延迟刷新页面以更新统计数据
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          } else {
+            showMessage(result.message || '删除失败', 'error');
+          }
+        } catch (error) {
+          console.error('Delete error:', error);
+          showMessage('删除失败：网络错误', 'error');
+        }
+      }
+
+      // 批量删除
+      async function batchDelete() {
+        const checked = document.querySelectorAll('.visit-checkbox:checked');
+        const ids = Array.from(checked)
+          .filter(
+            (cb): cb is HTMLInputElement => cb instanceof HTMLInputElement,
+          )
+          .map((cb) => parseInt(cb.value));
+
+        if (ids.length === 0) {
+          showMessage('请先选择要删除的记录', 'error');
+          return;
+        }
+
+        if (!confirm(`确定要删除选中的 ${ids.length} 条访问记录吗？`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/delete-visits', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ids }),
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            showMessage(`成功删除 ${result.deletedCount} 条记录`, 'success');
+            // 移除对应的表格行
+            ids.forEach((id) => {
+              const row = document.querySelector(`tr[data-visit-id="${id}"]`);
+              if (row) {
+                row.remove();
+              }
+            });
+            updateSelectedCount();
+            // 延迟刷新页面以更新统计数据
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          } else {
+            showMessage(result.message || '删除失败', 'error');
+          }
+        } catch (error) {
+          console.error('Batch delete error:', error);
+          showMessage('删除失败：网络错误', 'error');
+        }
+      }
+
+      // 使用事件委托处理删除按钮点击
+      document.addEventListener('click', function (event) {
+        const target = event.target as HTMLElement;
+
+        // 单个删除按钮
+        if (
+          target.classList.contains('delete-btn') &&
+          target.getAttribute('data-action') === 'delete-single'
+        ) {
+          const visitId = target.getAttribute('data-visit-id');
+          if (visitId) {
+            deleteVisit(parseInt(visitId));
+          }
+        }
+
+        // 批量删除按钮
+        if (
+          target.classList.contains('delete-btn') &&
+          target.getAttribute('data-action') === 'delete-batch'
+        ) {
+          batchDelete();
+        }
+      });
+
+      // 初始化选中数量显示
+      updateSelectedCount();
+    </script>
   </body>
 </html>
